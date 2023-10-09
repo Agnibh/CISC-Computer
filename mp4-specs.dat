@@ -1,0 +1,1156 @@
+***************************
+**** ECE 5362, Au 2018 ****
+**** Machine Problem 4 ****
+****** Charlie Keller *****
+******* Agnibh Dey ********
+***************************
+*** Start fetch cycle ***
+ st=0	rt='[pc]-> mar'		imar rac=1 rn=3
+ st=1	rt='[[mar]]-> mdr'	read
+ st=2	rt='[mdr] -> ir'	omdr iir
+ st=3	rt='[pc]+1 -> q'	rac=1 rn=3 ib p1 oadder
+ st=4	rt='[q] -> pc'		oq wac=1 wn=3
+	cond='ir158'	value=0 nst=6
+	cond='ir1512'	value=0 nst=8
+	nst=10
+***if it is a double operand instruction, it will get to here and be sent to 10***
+	nst=6
+
+*** If any instructions are present except HALT or INC, a halt will occur. ***
+*** HALT, RTS, SC/CC and All Conditional Branches are sent here ***
+ st=6 
+	cond='ir76'	value=2 nst=600
+***RTS and All Conditional Branches sent to 600***
+	cond='ir76'	value=0 nst=670
+***SC/CC and Halt sent to 670***
+
+*** All single operand instructions will be sent here***
+ st=8
+	cond='ir118'	value=10 nst=1000
+********DBRA execution sent to 1000**********
+	cond='ir64'	value=0 nst=20 
+****Single Operand Instuctions using Register Addressing Mode***	
+	cond='ir64'	value=1 nst=55 
+****Single Operand Instuctions using Register Indirect Addressing Mode***
+	cond='ir64'	value=2 nst=60 
+****Single Operand Instuctions using Autoincrement Addressing Mode***
+	cond='ir64'	value=3 nst=70 
+****Single Operand Instuctions using Autodecrement Addressing Mode***
+	cond='ir64'	value=4 nst=80 
+****Single Operand Instuctions using Index Addressing Mode***
+	cond='ir64'	value=5 nst=90 
+****Single Operand Instuctions using Absolute Addressing Mode***
+
+
+
+****All double operand instructions will be sent here to determine the source and destination addressing modes***
+ st=10
+	cond='ir118'	value=0 nst=200     
+***Sources with addressing mode 0***
+	cond='ir118'	value=1 nst=140   
+***Sources with addressing mode 1 and destination mode 0***
+	cond='ir118'	value=2 nst=150   
+***Sources with addressing mode 2 and destination mode 0***
+	cond='ir118'	value=3 nst=160   
+***Sources with addressing mode 3 and destination mode 0***
+	cond='ir118'	value=4 nst=170   
+***Sources with addressing mode 4 and destination mode 0***
+	cond='ir118'	value=5 nst=180   
+***Sources with addressing mode 5 and destination mode 0***
+	cond='ir118'	value=6 nst=190   
+***Sources with addressing mode 6 and destination mode 0***
+
+****Treat the source like we did in the single operand section. Put the nonregister effective address in t2***
+****Put the nonregister operand in t3. Put the register value in t4. Then those 3 can be sent to ns=4000 to the generic***
+****add, sub and move***
+
+***All Single Operand Instructions using Register Addressing Mode are sent here***
+ st=20
+	cond='ir118'	value=1 nst=21     
+***CLR for Register Addressing Mode***
+	cond='ir118'	value=2 nst=26    
+*****INC for Register Addressing Mode***
+	cond='ir118'	value=3 nst=29     
+****DEC for Register Addressing Mode***
+	cond='ir118'	value=4 nst=33     
+***NEG for Register Addressing Mode***
+	cond='ir118'	value=5 nst=36    
+*****COMP for Register Addressing Mode***
+	cond='ir118'	value=6 nst=39     
+****JMP for Register Addressing Mode***
+	cond='ir118'	value=7 nst=40     
+***JSR for Register Addressing Mode***
+	cond='ir118'	value=8 nst=50     
+***TST for Register Addressing Mode***
+
+*** CLR Implementation***
+ st=21 rt='[D] -> t1'			rac=3 rn=0 it1 newz newn
+ st=22 rt='[t1] -> t2'			ot1 it2 newz newn
+ st=23 rt='[t1] + Comp[t2] -> q'	ot2 ib comp oa oadder p1 clrv clrc
+ st=24 rt='[q] -> D'			oq wac=3 wn=0 newz newn
+	 nst=0
+
+*** INC Implementation***
+ st=26 rt='[RX] +1 -> q'	rac=3 rn=0 ib p1 oadder newv newc
+ st=27 rt='[q] -> RX'		oq wac=3 wn=0 newz newn
+	nst=0
+
+*** DEC Implementation***
+ st=29 rt='[RX] -> t1'		rac=3 rn=0 it1
+ st=30 rt='t1 -1 ->q'		comp oadder oa newv newc
+ st=31 rt='q -> RX'		oq wac=3 wn=0 newz newn
+	nst=0
+
+***NEG Implementation***
+ st=33 rt='0 -[RX] ->q'		rac=3 rn=0 ib comp oadder p1 newc newv
+ st=34 rt='q ->[RX]'		oq wac=3 wn=0 newz newn
+	nst=0
+
+***COMP Implementation***
+ st=36 rt='Comp[D] -> q'	rac=3 rn=0 ib comp oadder clrc clrv
+ st=37 rt='[q] -> D'		oq wac=3 wn=0 newz newn
+	 nst=0
+
+
+***JMP Implementation***
+ st=39 rt='[D] -> PC'		rac=3 rn=0 wac=1 wn=3
+	 nst=0
+
+
+***JSR Implementation***
+***Move the stack pointer to top of queue, put the PC in the SP and then put the address in PC***
+ st=40 rt='[SP] -> t1'		rac=1 rn=2 it1 newz newn
+ st=41 rt='[t1] -1 -> q'	oa ib comp oadder newc newv
+ st=42 rt='[q] -> SP'		oq wac=1 wn=2 newz newn
+ st=43 rt='[PC] -> t1'		rac=1 rn=3 it1 newz newn
+ st=44 rt='[t1] +1 -> q'	oa p1 oadder newc newv
+ st=45 rt='[q] -> mdr'		oq imdr newz newn
+ st=46 rt='[SP] -> mar'	rac=1 rn=2 imar newz newn
+ st=47 rt='[MDR] -> [MAR]' 	write 
+ ***PC is stored in SP pointer address***
+ st=48 rt='[D] -> PC'		rac=3 rn=0 newz newn wac=1 wn=3
+	 nst=0
+
+***TST Implementation***
+ st=50 rt='[D] -> t1'		rac=3, rn=0 it1 newz newn
+ st=51 rt='[t1] -0 -> q'	oa oadder clrc clrv
+	 nst=0
+
+
+
+***All single operand instructions using register indirect addressing mode are sent here***
+ st=55 rt='[RX] -> t2 and MAR' rac=3 rn=0 it2 imar newz newn   
+***Effective address put in T2***
+ st=56 rt='[[MAR]] -> MDR'	read
+ st=57 rt='[MDR] -> t3'	omdr it3 newz newn  
+***Destination Operand put in T3***
+	nst=100            
+***Sent to 100 to determine if it is INC DEC or NEG***
+
+
+***All single operand instructions using autoincrement addressing mode are sent here***
+ st=60 rt='[RX] -> t2 and MAR' rac=3 rn=0 it2 imar newz newn   
+***Effective address put in T2***
+ st=61 rt='[[MAR]] -> MDR'	read
+ st=62 rt='[MDR] -> t3'	omdr it3 newz newn  
+***Destination Operand put in T3***
+ st=63 rt='[t2] +1 -> q'	ot2 ib p1 oadder newc newv   
+***Autoincrement function is done here***
+ st=64 rt='[q] -> RX'		oq wac=3 wn=0 newz newn
+	nst=100            
+***Sent to 100 to determine if it is INC DEC or NEG***
+
+***All single operand instructions using autodecrement addressing mode are sent here***
+ st=70 rt='[RX] -> t1'			rac=3 rn=0 it1 newz newn
+ st=71 rt='[t1] -1 -> q'		oa comp oadder newc newv
+ st=72 rt='[q] -> RX and t2 and mar'	oq wac=3 wn=0 it2 imar newz newn   
+***Effective address put in T2***
+ st=73 rt='[[MAR]] -> MDR'	read
+ st=74 rt='[MDR] -> t3'	omdr it3 newz newn  
+***Destination Operand put in T3***
+	nst=100
+
+***All single operand instructions using index addressing mode are sent here***
+ st=80	rt='[pc]-> mar'		imar rac=1 rn=3
+ st=81	rt='[[mar]]-> mdr'	read
+ st=82	rt='[pc]+1 -> q'		rac=1 rn=3 ib p1 oadder
+ st=83	rt='[q] -> pc'		oq wac=1 wn=3
+*** n is sitting in mdr here***
+ st=84 	rt='[RX] -> t1'		rac=3 rn=0 it1 newz newn
+ st=85 	rt='t1 + mdr ->q'		omdr ib oa oadder newc newv
+ st=86 	rt='[q] -> t2 and mar' oq it2 imar newz newn        
+***Effective address put in T2***
+ st=87 	rt='[[MAR]] -> MDR'	read
+ st=88 	rt='[MDR] -> t3'		omdr it3 newz newn  
+***Destination Operand put in T3***
+	nst=100
+
+***All single operand instructions using absolute addressing mode are sent here***
+ st=90	rt='[pc]-> mar'		imar rac=1 rn=3
+ st=91	rt='[[mar]]-> mdr'	read
+ st=92	rt='[pc]+1 -> q'		rac=1 rn=3 ib p1 oadder
+ st=93	rt='[q] -> pc'		oq wac=1 wn=3 
+*** n is sitting in mdr here***
+ st=94 rt='[mdr] -> t2 and mar' omdr it2 imar newz newn     
+***Effective address put in T2***
+ st=95 rt='[[MAR]] -> MDR'	read
+ st=96 rt='[MDR] -> t3'	omdr it3 newz newn  
+***Destination Operand put in T3***
+	nst=100
+
+
+
+
+
+***Will need to jump back to here after T2 and T3 are set in the previous jumps***
+ st=100
+	cond='ir118'	value=1 nst=101
+	cond='ir118'	value=2 nst=110    
+*****might need to change nst values for these 3*****
+	cond='ir118'	value=3 nst=120     
+**** these condition codes decide if its INC DEC NEG ***
+	cond='ir118'	value=4 nst=130
+	cond='ir118'	value=5 nst=135    
+*****might need to change nst values for these 3*****
+	cond='ir118'	value=6 nst=157     
+**** these condition codes decide if its INC DEC NEG ***
+	cond='ir118'	value=7 nst=220
+	cond='ir118'	value=8 nst=230
+
+
+
+
+***All CLR operations happen here based on values of T2 and T3 with the exception of Register Addressing Mode***
+ st=101 rt='[t3] -> t1'		ot3 it1 newz newn
+ st=102 rt='[t1] + Comp[t3] -> q'	ot3 ib comp p1 oadder oa clrc clrv
+ st=103 rt='[q] -> MDR'		oq imdr newz newn
+ st=104 rt='[t2] -> MAR'		ot2 imar 
+ st=105 rt='[MDR] -> [MAR]' 		write
+	nst=0
+
+
+
+***All INC operations happen here based on values of T2 and T3 with the exception of Register Addressing Mode***
+ st=110 rt='[t3] +1 -> q'	ot3 ib p1 oadder newc newv
+ st=111 rt='[q] -> MDR'		oq imdr newz newn
+ st=112 rt='[t2] -> MAR'	ot2 imar 
+ st=113 rt='[MDR] -> [MAR]' 	write
+	nst=0
+
+***All DEC operations happen here based on values of T2 and T3 with the exception of Register Addressing Mode***
+ st=120 rt='[t3] -> t1'		ot3 it1 newz newn
+ st=121 rt='t1 -1 ->q'		comp oadder oa newv newc
+ st=122 rt='[q] -> MDR'		oq imdr newz newn
+ st=123 rt='[t2] -> MAR'	ot2 imar 
+ st=124 rt='[MDR] -> [MAR]' 	write
+	nst=0
+
+***All NEG operations happen here based on values of T2 and T3 with the exception of Register Addressing Mode***
+ st=130 rt='0 -[t3] ->q'	ot3 ib comp oadder p1 newc newv
+ st=131 rt='[q] -> MDR'		oq imdr newz newn
+ st=132 rt='[t2] -> MAR'	ot2 imar 
+ st=133 rt='[MDR] -> [MAR]' 	write
+	nst=0
+
+***All COMP operations happen here based on values of T2 and T3 with the exception of Register Addressing Mode***
+ st=135 rt='Comp[t3] -> q'	ot3 ib comp oadder clrc clrv
+ st=136 rt='[q] -> MDR'	oq imdr newz newn
+ st=137 rt='[t2] -> MAR'	ot2 imar 
+ st=138 rt='[MDR] -> [MAR]' 	write
+	nst=0
+
+
+
+
+
+
+
+
+***All double operand instructions using Source as register indirect addressing mode and register destination addressing mode (Destination 0) are sent here***
+ st=140 rt='[S] -> t2 and MAR'  	rac=2 rn=0 it2 imar newz newn   
+***Effective address put in T2***
+ st=141 rt='[[MAR]] -> MDR'		read
+ st=142 rt='[MDR] -> t3'		omdr it3 newz newn  
+***Source Operand put in T3***
+ st=143 rt='[D] -> t4' 		rac=3 rn=0 it4 newz newn   
+***Destination Operand put in T4***
+	nst=500            
+***Sent to 500 to determine if it is ADD SUB or MOVE***
+
+***All double operand instructions using Source as autoincrement addressing mode and register destination addressing mode (Destination 0) are sent here***
+ st=150 rt='[S] -> t2 and MAR' rac=2 rn=0 it2 imar newz newn   
+***Effective address put in T2***
+ st=151 rt='[[MAR]] -> MDR'	read
+ st=152 rt='[MDR] -> t3'	omdr it3 newz newn  
+***Source Operand put in T3***
+ st=153 rt='[t2] +1 -> q'	ot2 ib p1 oadder newc newv   
+***Autoincrement function is done here***
+ st=154 rt='[q] -> RX'		oq wac=2 wn=0 newz newn
+ st=155 rt='[D] -> t4' 	rac=3 rn=0 it4 newz newn   
+***Destination Operand put in T4***
+	nst=500            
+***Sent to 500 to determine if it is ADD SUB or MOVE***
+
+***All JMP operations happen here based on values of T2 and T3 with the exception of Register Addressing Mode***
+ st=157 rt='[t2] -> PC'	ot2 wac=1 wn=3 newz newn
+	 nst=0
+************************************JMP and JSR will need to be checked for if we should use t2 or t3******************************************
+
+***All double operand instructions using Source as autodecrement addressing mode and register destination addressing mode (Destination 0) are sent here***
+ st=160 rt='[S] -> t1'			rac=2 rn=0 it1 newz newn
+ st=161 rt='[t1] -1 -> q'		oa comp oadder newc newv
+ st=162 rt='[q] -> RX and t2 and mar'	oq wac=2 wn=0 it2 imar newz newn   
+***Effective address put in T2***
+ st=163 rt='[[MAR]] -> MDR'		read
+ st=164 rt='[MDR] -> t3'		omdr it3 newz newn  
+***Source Operand put in T3***
+ st=165 rt='[D] -> t4' 		rac=3 rn=0 it4 newz newn   
+***Destination Operand put in T4***
+	nst=500
+
+***All double operand instructions using Source as index addressing mode and register destination addressing mode (Destination 0) are sent here***
+ st=170	rt='[pc]-> mar'		imar rac=1 rn=3
+ st=171	rt='[[mar]]-> mdr'	read
+ st=172	rt='[pc]+1 -> q'	rac=1 rn=3 ib p1 oadder
+ st=173	rt='[q] -> pc'		oq wac=1 wn=3
+*** n is sitting in mdr here***
+ st=174 rt='[S] -> t1'			rac=2 rn=0 it1 newz newn
+ st=175 rt='t1 +mdr ->q'		omdr ib oa oadder newc newv
+ st=176 rt='[q] -> t2 and mar'  	oq it2 imar newz newn        
+***Effective address put in T2***
+ st=177 rt='[[MAR]] -> MDR'		read
+ st=178 rt='[MDR] -> t3'		omdr it3 newz newn  
+***Source Operand put in T3***
+ st=179 rt='[D] -> t4' 		rac=3 rn=0 it4 newz newn   
+***Destination Operand put in T4***
+	nst=500
+
+***All double operand instructions using Source as absolute addressing mode and register destination addressing mode (Destination 0) are sent here***
+ st=180	rt='[pc]-> mar'		imar rac=1 rn=3
+ st=181	rt='[[mar]]-> mdr'	read
+ st=182	rt='[pc]+1 -> q'	rac=1 rn=3 ib p1 oadder
+ st=183	rt='[q] -> pc'		oq wac=1 wn=3 
+*** n is sitting in mdr here***
+ st=184 rt='[mdr] -> t2 and mar'	omdr it2 imar newz newn     
+***Effective address put in T2***
+ st=185 rt='[[MAR]] -> MDR'		read
+ st=186 rt='[MDR] -> t3'		omdr it3 newz newn  
+***Source Operand put in T3***
+ st=187 rt='[D] -> t4' 		rac=3 rn=0 it4 newz newn   
+***Destination Operand put in T4***	
+	nst=500
+
+
+***All double operand instructions using Source as immediate addressing mode and register destination addressing mode (Destination 0) are sent here***
+ st=190	rt='[pc]-> mar'		imar rac=1 rn=3
+ st=191	rt='[[mar]]-> mdr'	read
+ st=192	rt='[pc]+1 -> q'	rac=1 rn=3 ib p1 oadder
+ st=193	rt='[q] -> pc'		oq wac=1 wn=3 
+*** n is sitting in mdr here***
+ st=194 rt='[MDR] -> t3'		omdr it3 newz newn  
+***Source Operand put in T3***
+ st=195 rt='[D] -> t4' 		rac=3 rn=0 it4 newz newn   
+***Destination Operand put in T4***	
+	nst=500
+
+
+
+ st=200
+	cond='ir64'	value=0 nst=240  
+****Source 0 and Destination 0***    ***Done***
+	cond='ir64'	value=1 nst=250  
+****Source 0 and Destination 1*** 
+	cond='ir64'	value=2 nst=260 
+****Source 0 and Destination 2***  
+	cond='ir64'	value=3 nst=270 
+****Source 0 and Destination 3***    ****Treat the destination like we did in the single operand section. Put the nonregister effective address in t2***
+	cond='ir64'	value=4 nst=280 
+****Source 0 and Destination 4***    ****Put the nonregister operand in t3. Put the register value in t4. Then those 3 can be sent to ns=3000 to the generic***
+	cond='ir64'	value=5 nst=290 
+****Source 0 and Destination 5***    ****add, sub and move***
+***all done***
+
+***All JSR operations happen here based on values of T2 and T3 with the exception of Register Addressing Mode***
+ st=220 rt='[SP] -> t1'		rac=1 rn=2 it1 newz newn
+ st=221 rt='[t1] -1 -> q'	oa ib comp oadder newc newv
+ st=222 rt='[q] -> SP'		oq wac=1 wn=2 newz newn
+
+ st=223 rt='[PC] -> t1'	rac=1 rn=3 it1 newz newn
+ st=224 rt='[t1] -> q'		oa oadder newc newv
+ st=225 rt='[q] -> mdr'		oq imdr newz newn
+ st=226 rt='[SP] -> mar'	rac=1 rn=2 imar newz newn
+ st=227 rt='[MDR] -> [MAR]' 	write
+ st=228 rt='[t2] -> PC'		ot2 newz newn wac=1 wn=3
+	 nst=0
+
+***All TST operations happen here based on values of T2 and T3 with the exception of Register Addressing Mode***
+ st=230 rt='[t3] -> t1'	ot3 it2 newz newn
+ st=231 rt='[t1] -0 -> q'	oa oadder clrc clrv
+	 nst=0
+
+
+
+****Determine if we are doing ADD SUB or MOVE for case with Source 0 and Destination 0***
+ st=240
+	cond='ir1512'	value=1 nst=310  
+***ADD sent to 310***
+	cond='ir1512'	value=2 nst=320  
+***SUB sent to 320***
+	cond='ir1512'	value=3 nst=330  
+***MOVE sent to 330***
+	cond='ir1512'	value=4 nst=340  
+***EXG sent to 340***
+	cond='ir1512'	value=5 nst=350  
+***OR sent to 350***
+	cond='ir1512'	value=6 nst=360  
+***AND sent to 360***
+ st=241 halt
+
+***All double operand instructions using Source 0 and register indirect addressing mode for destination (Destination 1) are sent here***
+ st=250 rt='[D] -> t2 and MAR' 	rac=3 rn=0 it2 imar newz newn   
+***Effective address put in T2***
+ st=251 rt='[[MAR]] -> MDR'	read
+ st=252 rt='[MDR] -> t3'	omdr it3 newz newn  
+***Destination Operand put in T3***
+ st=253 rt='[S] -> t4' 		rac=2 rn=0 it4 newz newn   
+***Source Operand put in T4***
+	nst=400            
+***Sent to 400 to determine if it is ADD SUB or MOVE***
+
+***All double operand instructions using Source 0 and autoincrement addressing mode for destination (Destination 2) are sent here***
+ st=260 rt='[RX] -> t2 and MAR' 	rac=3 rn=0 it2 imar newz newn   
+***Effective address put in T2***
+ st=261 rt='[[MAR]] -> MDR'		read
+ st=262 rt='[MDR] -> t3'		omdr it3 newz newn  
+***Destination Operand put in T3***
+ st=263 rt='[t2] +1 -> q'		ot2 ib p1 oadder newc newv   
+***Autoincrement function is done here***
+ st=264 rt='[q] -> RX'			oq wac=3 wn=0 newz newn
+ st=265 rt='[S] -> t4' 		rac=2 rn=0 it4 newz newn   
+***Source Operand put in T4***
+	nst=400            
+***Sent to 400 to determine if it is ADD SUB or MOVE***
+
+***All double operand instructions using Source 0 and autodecrement addressing mode for destination (Destination 3) are sent here***
+ st=270 rt='[RX] -> t1'		rac=3 rn=0 it1 newz newn
+ st=271 rt='[t1] -1 -> q'		oa comp oadder newc newv
+ st=272 rt='[q] -> RX and t2 and mar'	oq wac=3 wn=0 it2 imar newz newn   
+***Effective address put in T2***
+ st=273 rt='[[MAR]] -> MDR'		read
+ st=274 rt='[MDR] -> t3'		omdr it3 newz newn  
+***Destination Operand put in T3***
+ st=275 rt='[S] -> t4' 		rac=2 rn=0 it4 newz newn   
+***Source Operand put in T4***
+	nst=400
+
+***All double operand instructions using Source 0 and index addressing mode for destination (Destination 4) are sent here***
+ st=280	rt='[pc]-> mar'		imar rac=1 rn=3
+ st=281	rt='[[mar]]-> mdr'	read
+ st=282	rt='[pc]+1 -> q'	rac=1 rn=3 ib p1 oadder
+ st=283	rt='[q] -> pc'		oq wac=1 wn=3
+*** n is sitting in mdr here***
+ st=284 rt='[RX] -> t1'		rac=3 rn=0 it1 newz newn
+ st=285 rt='t1 +mdr ->q'		omdr ib oa oadder newc newv
+ st=286 rt='[q] -> t2 and mar'  	oq it2 imar newz newn        
+***Effective address put in T2***
+ st=287 rt='[[MAR]] -> MDR'		read
+ st=288 rt='[MDR] -> t3'		omdr it3 newz newn  
+***Destination Operand put in T3***
+ st=289 rt='[S] -> t4' 		rac=2 rn=0 it4 newz newn   
+***Source Operand put in T4***
+	nst=400
+
+***All double operand instructions using Source 0 and absolute addressing mode for destination (Destination 5) are sent here***
+ st=290	rt='[pc]-> mar'		imar rac=1 rn=3
+ st=291	rt='[[mar]]-> mdr'	read
+ st=292	rt='[pc]+1 -> q'	rac=1 rn=3 ib p1 oadder
+ st=293	rt='[q] -> pc'		oq wac=1 wn=3 
+*** n is sitting in mdr here***
+ st=294 rt='[mdr] -> t2 and mar'	omdr it2 imar newz newn     
+***Effective address put in T2***
+ st=295 rt='[[MAR]] -> MDR'		read
+ st=296 rt='[MDR] -> t3'		omdr it3 newz newn  
+***Destination Operand put in T3***
+ st=297 rt='[S] -> t4' 		rac=2 rn=0 it4 newz newn   
+***Source Operand put in T4***	
+	nst=400
+
+***ADD function for Source 0 and Destination 0****                                     **All instructions for S0 D0 implemented**
+ st=310 rt='[S] -> t2 and t1' 	rac=2 rn=0 it2 it1 newz newn
+ st=311 rt='[D] -> t3'		rac=3 rn=0 it3 newz newn
+ st=312 rt='t1 +t3 -> q'	oa ot3 ib oadder newz newn newc newv
+ st=313 rt='[q] -> D'		oq wac=3 wn=0 newz newn
+	nst=0
+
+***SUB function for Source 0 and Destination 0***
+ st=320 rt='[D] -> t2 and t1' 	rac=3 rn=0 it2 it1 newz newn
+ st=321 rt='[S] -> t3'		rac=2 rn=0 it3 newz newn
+ st=322 rt='t1 -t3 -> q'	oa ot3 comp p1 ib oadder newv newc
+ st=323
+	cond='c'	value=0 nst=324
+	cond='c'	value=1 nst=326
+**********************************************************************This one is right****************************************************************
+ st=324 rt='[c]=1'	setc 
+	nst=328
+ st=326 rt='[c]=0'	clrc
+	nst=328
+ st=328 rt='[q] -> D'		oq wac=3 wn=0 newz newn
+	nst=0
+
+***MOVE function for Source 0 and Destination 0***
+ st=330 rt='[S] -> t1'	rac=2 rn=0 it1 newz newn
+ st=331 rt='[t1] -> q'	oa clrc clrv oadder
+ st=332 rt='[q] -> D'   oq wac=3 wn=0 newz newn
+	nst=0
+
+***EXG function for Source 0 and Destination 0***
+ st=340 rt='[S] -> t2' 		rac=2 rn=0 it2
+ st=341 rt='[D] -> t3'		rac=3 rn=0 it3
+ st=342 rt='[t2] -> D'		wac=3 wn=0 ot2
+ st=343 rt='[t3] -> S'		wac=2 wn=0 ot3
+	nst=0
+
+***OR function for Source 0 and Destination 0***
+ st=350 rt='[S] -> t2' 		rac=2 rn=0 it2
+ st=351 rt='[D] -> t3'		rac=3 rn=0 it3
+ st=352 rt='[t2] OR [t3] -> q'	ot2 ot3 ib oadder clrc clrv
+ st=353 rt='[q] -> D'	 	oq wac=3 wn=0 newz newn	
+	nst=0
+
+***AND function for Source 0 and Destination 0***
+ st=360 rt='[S] -> t2' 		rac=2 rn=0 it2
+ st=361 rt='[D] -> t3'		rac=3 rn=0 it3
+ st=362 rt='Comp[t2] -> q'	ot2 ib comp oadder clrc clrv
+ st=363 rt='[q] -> t2'		oq it2 newz newn
+ st=364 rt='Comp[t3] -> q'	ot3 ib comp oadder clrc clrv
+ st=365 rt='[q] -> t3'		oq it3 newz newn
+ st=366 rt='[t2] OR [t3] -> q'	ot2 ot3 ib oadder clrc clrv
+ st=367 rt='Comp[q] -> q'	oq ib comp oadder clrc clrv
+ st=368 rt='[q] -> D'	 	oq wac=3 wn=0 newz newn	
+	nst=0
+
+
+
+
+
+***All double operand instuctions using Source 0 and a nonzero Destination are sent here to decide which instruction is being called***
+ st=400
+	cond='ir1512'	value=1 nst=410  
+***ADD sent to 410***
+	cond='ir1512'	value=2 nst=420  
+***SUB sent to 420***
+	cond='ir1512'	value=3 nst=430  
+***MOVE sent to 430***
+	cond='ir1512'	value=4 nst=440  
+***EXG sent to 440***
+	cond='ir1512'	value=5 nst=450  
+***OR sent to 450***
+	cond='ir1512'	value=6 nst=460  
+***AND sent to 460***
+	nst=0
+
+
+***Double operand ADD implementation with Source 0 and nonzero Destination***
+ st=410 rt='[t3] -> t1'		ot3 it1 newz newn
+ st=411 rt='[t1] + [t4] -> q'  	oa ot4 ib oadder newc newv
+ st=412 rt='[t2] -> MAR'	ot2 imar 
+ st=413 rt='[q] -> MDR'		oq imdr newz newn
+ st=414 rt='[MDR] -> [MAR]'	write
+	nst=0
+
+***Double operand SUB implementation with Source 0 and nonzero Destination***
+ st=420 rt='[t3] -> t1'		ot3 it1 newz newn
+ st=421 rt='[t1] - [t4] -> q'  	ot4 ib comp p1 oa oadder newv newz newn newc
+ st=422
+	cond='c'	value=0  nst=923
+	cond='c'	value=1  nst=924
+ st=423 rt='[c]=1'	setc
+	nst=925
+ st=424 rt='[c]=0'	clrc
+	nst=925
+ st=425 rt='[t2] -> MAR'	ot2 imar
+ st=426 rt='[q] -> MDR'		oq imdr newz newn
+ st=427 rt='[MDR] -> [MAR]'	write
+	nst=0
+
+***Double operand MOVE implementation with Source 0 and nonzero Destination***
+ st=430 rt='[t4] -> t1'		ot4 it1 newz newn
+ st=431 rt='[t1] -> q'		oa clrc clrv oadder
+ st=432 rt='[t2] -> MAR'	ot2 imar
+ st=433 rt='[q] -> MDR'		oq imdr newz newn
+ st=434 rt='[MDR] -> [MAR]'	write
+	nst=0
+
+***Double operand EXG implementation with Source 0 and nonzero Destination***
+ st=440 rt='[t3] -> S'		ot3 wac=2 wn=0 
+ st=441 rt='[t4] -> mdr'	ot4 imdr
+ st=442 rt='[t2] -> mar'	ot2 imar
+ st=443 rt='[MDR] -> [MAR]'	write
+	nst=0
+
+***Double operand OR implementation with Source 0 and nonzero Destination***
+ st=450 rt='[t4] OR [t3] -> q'	ot4 ot3 ib oadder clrc clrv
+ st=451 rt='[q] -> mdr'	 	oq imdr newz newn
+ st=452 rt='[t2] -> mar'	ot2 imar
+ st=453 rt='[MDR] -> [MAR]'	write
+	nst=0
+
+
+***Double operand AND implementation with Source 0 and nonzero Destination***
+ st=460 rt='Comp[t4] -> q'	ot4 ib comp oadder clrc clrv
+ st=461 rt='[q] -> t4'		oq it4 newz newn
+ st=462 rt='Comp[t3] -> q'	ot3 ib comp oadder clrc clrv
+ st=463 rt='[q] -> t3'		oq it3 newz newn
+ st=464 rt='[t4] OR [t3] -> q'	ot4 ot3 ib oadder clrc clrv
+ st=465 rt='Comp[q] -> q'	oq ib comp oadder clrc clrv
+ st=466 rt='[q] -> mdr'	 	oq imdr newz newn
+ st=467 rt='[t2] -> mar'	ot2 imar
+ st=468 rt='[MDR] -> [MAR]'	write
+	nst=0
+
+
+
+***All double operand instuctions using nonzero Source and Destination 0 are sent here to decide if it is an ADD SUB or MOVE instruction***
+ st=500
+	cond='ir1512'	value=1 nst=510  
+***ADD sent to 510***
+	cond='ir1512'	value=2 nst=520  
+***SUB sent to 520***
+	cond='ir1512'	value=3 nst=530  
+***MOVE sent to 530***
+	cond='ir1512'	value=4 nst=540  
+***EXG sent to 540***
+	cond='ir1512'	value=5 nst=550  
+***OR sent to 550***
+	cond='ir1512'	value=6 nst=560  
+***AND sent to 560***
+	nst=0
+
+***Double operand ADD implementation with nonzero Source and Destination 0***
+ st=510 rt='[t4] -> t1'	ot4 it1 newz newn
+ st=511 rt='[t1] + [t3] -> q'  oa ot3 ib oadder newc newv
+ st=512 rt='[q] -> RX'		oq wac=3 wn=0 newz newn
+	nst=0
+
+***Double operand SUB implementation with nonzero Source and Destination 0***
+ st=520 rt='[t4] -> t1'	ot4 it1 newz newn
+ st=521 rt='[t1] -[t3] -> q'	oa ot3 comp p1 ib oadder newz newn newv newc
+ st=522
+	cond='c'	value=0  nst=1203
+	cond='c'	value=1  nst=1204
+ st=523 rt='[c]=1'	setc
+	nst=1205
+ st=524 rt='[c]=0'	clrc
+	nst=1205
+ st=525 rt='[q] -> D'		oq wac=3 wn=0 newz newn
+	nst=0
+
+***Double operand MOVE implementation with Source 0 and nonzero Destination***
+ st=530 rt='[t3] -> t1'	ot3 it1 newz newn
+ st=531 rt='[t1] -> q'		oa clrc clrv oadder
+ st=532 rt='[q] -> D'   	oq wac=3 wn=0 newz newn
+	nst=0
+
+
+***Double operand EXG implementation with Source nonzero and Destination0***
+ st=540 rt='[t3] -> D'		ot3 wac=3 wn=0 
+ st=541 rt='[t4] -> mdr'	ot4 imdr
+ st=542 rt='[t2] -> mar'	ot2 imar
+ st=543 rt='[MDR] -> [MAR]'	write
+	nst=0
+
+***Double operand OR implementation with Source 0 and nonzero Destination***
+ st=550 rt='[t4] OR [t3] -> q'	ot4 ot3 ib oadder clrc clrv
+ st=551 rt='[q] -> D'   	oq wac=3 wn=0 newz newn
+	nst=0
+
+***Double operand AND implementation with Source 0 and nonzero Destination***
+ st=560 rt='Comp[t4] -> q'	ot4 ib comp oadder clrc clrv
+ st=561 rt='[q] -> t4'		oq it4 newz newn
+ st=562 rt='Comp[t3] -> q'	ot3 ib comp oadder clrc clrv
+ st=563 rt='[q] -> t3'		oq it3 newz newn
+ st=564 rt='[t4] OR [t3] -> q'	ot4 ot3 ib oadder clrc clrv
+ st=565 rt='Comp[q] -> q'	oq ib comp oadder clrc clrv
+ st=566 rt='[q] -> D'   	oq wac=3 wn=0 newz newn
+	nst=0
+
+
+
+
+
+
+
+*********Special Instructions*********
+
+
+***RTS and All Conditional Branches sent here***
+ st=600
+	cond='ibrch'	value=0	nst=610
+***RTS and BHI sent to 610***
+	cond='ibrch'	value=1 nst=650
+***First 5 Conditional Branches sent to 650***
+
+
+
+ st=610
+	cond='ir5'	value=0	nst=620
+***RTS sent to 620***
+	cond='ir5'	value=1 nst=630
+***BHI sent to 630***
+
+**********RTS Implementation********************
+ st=620
+	cond='ir0'	value=1 nst=1480
+	cond='ir1'	value=1 nst=1480
+	cond='ir4'	value=1 nst=1480
+	nst=621
+
+
+ st=621 rt='[SP] -> mar and t1'		rac=1 rn=2 imar it1
+ st=622 rt='[[mar]] -> mdr'		read
+ st=623 rt='[mdr] -> PC'		omdr wac=1 wn=3
+ st=624 rt='[t1] +1 -> q'		oa ib p1 oadder
+ st=625 rt='[q] -> SP'			oq wac=1 wn=2
+	nst=0
+
+
+
+
+************BHI Implementation******************
+ st=630 rt='[pc]-> mar'	imar rac=1 rn=3
+ st=631 rt='[[mar]]-> mdr'	read
+ st=632 rt='[pc]+1 -> q'	rac=1 rn=3 ib p1 oadder
+ st=633 rt='[q] -> t1'		oq it1
+*** Offset is sitting in mdr here***
+ st=634 rt='[t1] + [mdr] ->q'	oa omdr ib oadder
+ st=635 rt='[q] -> pc'		oq wac=1 wn=3
+	nst=0
+
+
+*************First 5 Conditional Branches sent here. They all do the same thing so it doesn't matter which it is. It will be the same lines as BHI implemented above*******************
+ st=650
+	cond='ir5'	value=0 nst=651
+	cond='ir5'	value=1 nst=1480
+
+ st=651 rt='[pc]-> mar'	imar rac=1 rn=3
+ st=652 rt='[[mar]]-> mdr'	read
+ st=653 rt='[pc]+1 -> q'	rac=1 rn=3 ib p1 oadder
+ st=654 rt='[q] -> t1'		oq it1
+*** Offset is sitting in mdr here***
+ st=655 rt='[t1] + [mdr] ->q'	oa omdr ib oadder
+ st=656 rt='[q] -> pc'		oq wac=1 wn=3
+	nst=0
+	
+
+
+***************SC/CC and Halt sent here to decide which it is*********************
+
+ st=670
+	cond='ir75'	value=0 nst=672
+***Halt sent to 672***
+	cond='ir75'	value=1 nst=675
+***SC/CC sent to 675***
+	
+
+
+***Halt Implementation***
+ st=672	halt
+
+
+
+***SC/CC Implementation***
+ st=675 
+	cond='ir4'	value=0 nst=676
+***All clear instructions sent to 676***
+	cond='ir4'	value=1 nst=678
+***All set instructions sent to 678***
+
+
+***Clear instructions split up***
+ st=676
+	cond='ir0'	value=1 nst=680
+***Clear N sent to 680***
+	cond='ir1'	value=1 nst=690
+***Clear Z sent to 690***
+	cond='ir2'	value=1 nst=700
+***Clear V sent to 700***
+	cond='ir3'	value=1 nst=710
+***Clear C sent to 710***
+
+
+***Set instructions split up***
+ st=678
+	cond='ir0'	value=1 nst=720
+***Set N sent to 720***
+	cond='ir1'	value=1 nst=730
+***Set Z sent to 730***
+	cond='ir2'	value=1 nst=740
+***Set V sent to 740***
+	cond='ir3'	value=1 nst=750
+***Set C sent to 750***
+
+
+****Clear N***
+ st=680 rt='0 -> q'	oadder
+ st=681 rt='q -> t2'	oq it2 newn
+	 nst=0
+
+****Clear Z***
+ st=690 rt='1 -> q'	p1 oadder
+ st=691 rt='q -> t2'	oq it2 newz
+	 nst=0
+
+****Clear V***
+ st=700 rt='0 -> q'	oadder clrv
+	 nst=0
+
+****Clear C***
+ st=710 rt='0 -> q'	oadder clrc
+	 nst=0
+
+
+
+
+
+****Set N***
+ st=720 rt='-1 -> q'	oadder comp
+ st=721 rt='q -> t2'	oq it2 newn
+	 nst=0
+
+****Set Z***
+ st=730 rt='0 -> q'	oadder
+ st=731 rt='q -> t2'	oq it2 newz
+	 nst=0
+
+****Set V***
+ st=740 rt='0 -> q'	oadder setv
+	 nst=0
+
+****Set C***
+ st=750 rt='0 -> q'	oadder setc
+	 nst=0
+
+
+******DBRA Execution Sequence******
+ st=1000
+	cond='ir64'	value=0 nst=1010
+*****Register addressing mode sent to 1010****
+	cond='ir64'	value=1 nst=1050
+*****Register indirect addressing mode sent to 1050****
+	cond='ir64'	value=2 nst=1060
+*****Autoincrement addressing mode sent to 1060****          ***These next states will need updated***
+	cond='ir64'	value=3 nst=1070
+*****Autodecrement addressing mode sent to 1070****
+	cond='ir64'	value=4 nst=1080
+*****Index addressing mode sent to 1080****
+	cond='ir64'	value=5 nst=1090
+*****Absolute addressing mode sent to 1090****
+	 nst=0
+
+
+****Register addressing mode DBRA*****
+ st=1010	rt='[pc]-> mar'		imar rac=1 rn=3
+ st=1011	rt='[[mar]]-> mdr'	read
+ st=1012	rt='[pc]+1 -> q'	rac=1 rn=3 ib p1 oadder
+ st=1013	rt='[q] -> pc'		oq wac=1 wn=3
+*****Offset word has been read and is sitting in mdr. PC is now pointing at the instruction after the offset word****
+ st=1014
+		cond='z'	value=0 nst=1016
+***All of these ones will need to have Z cleared back to 0***
+		cond='z'	value=1 nst=1030  
+***All of these will need to have Z set to 1***
+
+*****Register addressing mode DBRA is sent here when the previous instruction had a Z value of 0********************
+ st=1016	rt='[D]->t1'		rac=3 rn=0 it1 newz
+ st=1017	
+		cond='z'	value=1 nst=1019    
+***will need to clear back to 0 and not update PC***
+		cond='z'	value=0 nst=1024    
+***will need to clear back to 0 and update PC***
+		nst=0
+
+****Previous instruction and current destination are both 0*****
+ st=1019	rt='[t1] -1 ->q'			oa comp oadder
+ st=1020	rt='[q] -> D'			oq wac=3 wn=0  newz  
+**cleared the z to get back to previous CC's**
+		nst=0
+
+****Previous instruction had a Z of 0 and current one has a Z of 1****
+ st=1024	rt='[t1] -1 ->q'			oa comp oadder
+ st=1025	rt='[q] -> D'			oq wac=3 wn=0
+ st=1026	rt='[PC] -> t1'			rac=1 rn=3 it1
+ st=1027	rt='[t1] + [mdr] ->q'		oa omdr ib oadder
+ st=1028	rt='[q] -> PC'			oq wac=1 wn=3
+***no update to Z becuase it will reamain a 0 which is the right value already***
+		nst=0
+   
+*****Register addressing mode DBRA is sent here when the previous instruction had a Z value of 1********************
+ st=1030	rt='[D]->t1'		rac=3 rn=0 it1 newz
+ st=1031	
+		cond='z'	value=1 nst=1033    
+***will need to have z set to 1 and not update PC***
+		cond='z'	value=0 nst=1036    
+***will need to have z set to 1 and update PC***
+		nst=0
+
+***Previous instruction had a Z of 1 and current one has a Z of 1 also****
+ st=1033	rt='[t1] -1 ->q'			oa comp oadder
+ st=1034	rt='[q] -> D'			oq wac=3 wn=0  
+***no update to Z becuase it will reamain a 1 which is the right value already***		
+		nst=0
+
+
+***Previous instruction had a Z of 1 and current one has a Z of 0***
+ st=1036	rt='[t1] -1 ->q'			oa comp oadder
+ st=1037	rt='[q] -> D'			oq wac=3 wn=0
+ st=1038	rt='[PC] -> t1'			rac=1 rn=3 it1
+ st=1039	rt='[t1] + [mdr] ->q'		oa omdr ib oadder
+ st=1040	rt='[q] -> PC'			oq wac=1 wn=3
+ st=1041	rt='[t1] + Comp(t1) ->q'	oa ot1 ib comp p1 oadder
+ st=1042	rt='[q] -> t1'			oq it1 newz       
+***newz here sets z***
+		nst=0
+
+
+***Register indirect Addressing Mode sent here***
+ st=1050	rt='[pc]-> mar'		imar rac=1 rn=3
+ st=1051	rt='[[mar]]-> mdr'	read
+ st=1052	rt='[pc]+1 -> q'	rac=1 rn=3 ib p1 oadder
+ st=1053	rt='[q] -> pc'		oq wac=1 wn=3
+*****Offset word has been read and is sitting in mdr. PC is now pointing at the instruction after the offset word****
+ st=1054	rt='[RX] -> t2 and MAR' rac=3 rn=0 it2 imar  
+***Effective address put in T2***
+ st=1055 rt='[[MAR]] -> MDR'	read
+ st=1056 rt='[MDR] -> t3'	omdr it3  
+***Destination Operand put in T3***
+	nst=1300           
+***Sent to 1300 to perform DBRA for Addressing modes 1, 2, and 3***
+
+***Autoincrement Addressing Mode sent here***
+ st=1060	rt='[pc]-> mar'		imar rac=1 rn=3
+ st=1061	rt='[[mar]]-> mdr'	read
+ st=1062	rt='[pc]+1 -> q'	rac=1 rn=3 ib p1 oadder
+ st=1063	rt='[q] -> pc'		oq wac=1 wn=3
+*****Offset word has been read and is sitting in mdr. PC is now pointing at the instruction after the offset word****
+ st=1064 rt='[RX] -> t2 and MAR' rac=3 rn=0 it2 imar   
+***Effective address put in T2***
+ st=1065 rt='[[MAR]] -> MDR'	read
+ st=1066 rt='[MDR] -> t3'	omdr it3
+***Destination Operand put in T3***
+ st=1067 rt='[t2] +1 -> q'	ot2 ib p1 oadder   
+***Autoincrement function is done here***
+ st=1068 rt='[q] -> RX'		oq wac=3 wn=0
+	nst=1300           
+***Sent to 1300 to perform DBRA for Addressing modes 1, 2, and 3***
+
+
+
+***Autodecrement Addressing Mode sent here***
+ st=1070	rt='[pc]-> mar'		imar rac=1 rn=3
+ st=1071	rt='[[mar]]-> mdr'	read
+ st=1072	rt='[pc]+1 -> q'	rac=1 rn=3 ib p1 oadder
+ st=1073	rt='[q] -> pc'		oq wac=1 wn=3
+*****Offset word has been read and is sitting in mdr. PC is now pointing at the instruction after the offset word****
+ st=1074 rt='[RX] -> t1'			rac=3 rn=0 it1
+ st=1075 rt='[t1] -1 -> q'		oa comp oadder
+ st=1076 rt='[q] -> RX and t2 and mar'	oq wac=3 wn=0 it2 imar   
+***Effective address put in T2***
+ st=1077 rt='[[MAR]] -> MDR'	read
+ st=1078 rt='[MDR] -> t3'	omdr it3
+***Destination Operand put in T3***
+	nst=1300           
+***Sent to 1300 to perform DBRA for Addressing modes 1, 2, and 3***
+
+
+
+
+
+*****Index Addressing Mode sent here****
+ st=1080	rt='[pc]-> mar'		imar rac=1 rn=3
+ st=1081	rt='[[mar]]-> mdr'	read
+ st=1082	rt='[pc]+1 -> q'	rac=1 rn=3 ib p1 oadder
+ st=1083	rt='[q] -> pc'		oq wac=1 wn=3
+*****n has been read and is sitting in mdr. PC is now pointing at the instruction after the offset word****
+ st=1084 rt='[RX] -> t1'		rac=3 rn=0 it1
+ st=1085 rt='t1 +mdr ->q'		omdr ib oa oadder
+ st=1086 rt='[q] -> t2 and mar'  	oq it2 imar        
+***Effective address put in T2***
+ st=1087 rt='[[MAR]] -> MDR'		read
+ st=1088 rt='[MDR] -> t3'		omdr it3  
+***Destination Operand put in T3***
+	nst=1400
+
+
+*****Absolute Addressing Mode sent here****
+ st=1090	rt='[pc]-> mar'		imar rac=1 rn=3
+ st=1091	rt='[[mar]]-> mdr'	read
+ st=1092	rt='[pc]+1 -> q'	rac=1 rn=3 ib p1 oadder
+ st=1093	rt='[q] -> pc'		oq wac=1 wn=3
+*****n has been read and is sitting in mdr. PC is now pointing at the instruction after the offset word****
+ st=1094 rt='[mdr] -> t2 and mar' 	omdr it2 imar    
+***Effective address put in T2***
+ st=1095 rt='[[MAR]] -> MDR'		read
+ st=1096 rt='[MDR] -> t3'		omdr it3  
+***Destination Operand put in T3***
+	nst=1400
+
+
+
+
+***DBRA for Addressing Modes 1, 2, and 3***
+ st=1300 
+		cond='z'	value=0 nst=1310  
+***All of these ones will need to have Z cleared back to 0***
+		cond='z'	value=1 nst=1340  
+***All of these will need to have Z set to 1***
+		nst=0
+
+*****DBRA for Addressing Modes 1, 2, and 3 are sent here when the previous instruction had a Z value of 0********************
+ st=1310	rt='t3->t1'		ot3 it1 newz
+ st=1311	
+		cond='z'	value=1 nst=1319    
+***will need to clear back to 0 and not update PC***
+		cond='z'	value=0 nst=1324    
+***will need to clear back to 0 and update PC***
+		nst=0
+****Previous instruction has 0 and current destination is 1 *****
+ st=1319	rt='[t1] -1 ->q'			oa comp oadder
+ st=1320	rt='[q] -> mdr'			oq imdr newz
+**cleared the z to get back to previous CC's**
+ st=1321	rt='[t2] -> mar'		ot2 imar
+ st=1322	rt='[mdr] ->[mar]'		write
+		nst=0
+
+****Previous instruction had a Z of 0 and current one has a Z of 0****
+ st=1324	rt='[t1] -1 ->q'		oa comp oadder
+ st=1325	rt='[q] -> mdr'			oq imdr
+ st=1326	rt='[t2] -> mar'		ot2 imar
+ st=1327	rt='[mdr] ->[mar]'		write
+ st=1328	rt='[PC] -> t1'			rac=1 rn=3 it1
+ st=1329	rt='[t1] + [mdr] ->q'		oa omdr ib oadder
+ st=1330	rt='[q] -> PC'			oq wac=1 wn=3
+***no update to Z becuase it will reamain a 0 which is the right value already***
+		nst=0
+
+
+*****DBRA for Addressing Modes 1, 2, and 3 are sent here when the previous instruction had a Z value of 1********************
+ st=1340	rt='[t3]->t1'		ot3 it1 newz
+ st=1341	
+		cond='z'	value=1 nst=1345    
+***will need to have z set to 1 and not update PC***
+		cond='z'	value=0 nst=1360    
+***will need to have z set to 1 and update PC***
+		nst=0
+
+
+***Previous instruction had a Z of 1 and current one has a Z of 1 also****
+ st=1345	rt='[t1] -1 ->q'			oa comp oadder
+ st=1346	rt='[q] -> mdr'			oq imdr  
+***no update to Z becuase it will reamain a 1 which is the right value already***	
+ st=1347	rt='[t2] -> mar'		ot2 imar
+ st=1348	rt='[mdr] ->[mar]'		write	
+		nst=0
+
+
+***Previous instruction had a Z of 1 and current one has a Z of 0***
+ st=1360	rt='[t1] -1 ->q'			oa comp oadder
+ st=1361	rt='[q] -> mdr'			oq imdr
+ st=1362	rt='[t2] -> mar'		ot2 imar
+ st=1363	rt='[mdr] ->[mar]'		write
+ st=1364	rt='[PC] -> t1'			rac=1 rn=3 it1
+ st=1365	rt='[t1] + [mdr] ->q'		oa omdr ib oadder
+ st=1366	rt='[q] -> PC'			oq wac=1 wn=3
+ st=1367	rt='[t1] + Comp(t1) ->q'	oa ot1 ib comp p1 oadder
+ st=1368	rt='[q] -> t1'			oq it1 newz       
+***newz here sets z***
+		nst=0
+
+
+
+
+
+
+***DBRA for Addressing Modes 4 and 5***
+ st=1400	rt='[pc]-> mar'		imar rac=1 rn=3
+ st=1401	rt='[[mar]]-> mdr'	read
+ st=1402	rt='[pc]+1 -> q'	rac=1 rn=3 ib p1 oadder
+ st=1403	rt='[q] -> pc'		oq wac=1 wn=3
+ st=1404
+		cond='z'	value=0 nst=1410  
+***All of these ones will need to have Z cleared back to 0***
+		cond='z'	value=1 nst=1440  
+***All of these will need to have Z set to 1***
+		nst=0
+
+
+*****DBRA for Addressing Modes 4 and 5 are sent here when the previous instruction had a Z value of 0********************
+ st=1410	rt='t3->t1'		ot3 it1 newz
+ st=1411	
+		cond='z'	value=1 nst=1419    
+***will need to clear back to 0 and not update PC***
+		cond='z'	value=0 nst=1424    
+***will need to clear back to 0 and update PC***
+		nst=0
+****Previous instruction has 0 and current destination is 1 *****
+ st=1419	rt='[t1] -1 ->q'			oa comp oadder
+ st=1420	rt='[q] -> mdr'			oq imdr newz
+**cleared the z to get back to previous CC's**
+ st=1421	rt='[t2] -> mar'		ot2 imar
+ st=1422	rt='[mdr] ->[mar]'		write
+		nst=0
+
+****Previous instruction had a Z of 0 and current one has a Z of 0****
+ st=1424	rt='[PC] -> t1'			rac=1 rn=3 it1
+ st=1425	rt='[t1] + [mdr] ->q'		oa omdr ib oadder
+ st=1426	rt='[q] -> PC'			oq wac=1 wn=3
+ st=1427	rt='t3->t1'		ot3 it1 newz
+ st=1428	rt='[t1] -1 ->q'		oa comp oadder
+ st=1429	rt='[q] -> mdr'			oq imdr
+ st=1430	rt='[t2] -> mar'		ot2 imar
+ st=1431	rt='[mdr] ->[mar]'		write
+ 
+***no update to Z becuase it will reamain a 0 which is the right value already***
+		nst=0
+
+
+*****DBRA for Addressing Modes 4 and 5 are sent here when the previous instruction had a Z value of 1********************
+ st=1440	rt='[t3]->t1'		ot3 it1 newz
+ st=1441	
+		cond='z'	value=1 nst=1445    
+***will need to have z set to 1 and not update PC***
+		cond='z'	value=0 nst=1460    
+***will need to have z set to 1 and update PC***
+		nst=0
+
+
+
+***Previous instruction had a Z of 1 and current one has a Z of 1 also****
+ st=1445	rt='[t1] -1 ->q'			oa comp oadder
+ st=1446	rt='[q] -> mdr'			oq imdr  
+***no update to Z becuase it will reamain a 1 which is the right value already***	
+ st=1447	rt='[t2] -> mar'		ot2 imar
+ st=1448	rt='[mdr] ->[mar]'		write	
+		nst=0
+
+
+***Previous instruction had a Z of 1 and current one has a Z of 0***
+ st=1460	rt='[PC] -> t1'			rac=1 rn=3 it1
+ st=1461	rt='[t1] + [mdr] ->q'		oa omdr ib oadder
+ st=1462	rt='[q] -> PC'			oq wac=1 wn=3
+ st=1463	rt='[t3]->t1'			ot3 it1 newz
+ st=1464	rt='[t1] -1 ->q'		oa comp oadder
+ st=1465	rt='[q] -> mdr'			oq imdr
+ st=1466	rt='[t2] -> mar'		ot2 imar
+ st=1467	rt='[mdr] ->[mar]'		write		
+ st=1468	rt='[t1] + Comp(t1) ->q'	oa ot1 ib comp p1 oadder
+ st=1469	rt='[q] -> t1'			oq it1 newz       
+***newz here sets z***
+		nst=0
+
+
+***PC increment for first 45 Branch instructions***
+ st=1480 rt='[pc]+1 -> q'	rac=1 rn=3 ib p1 oadder
+ st=1481 rt='[q] -> pc'		oq wac=1 wn=3
+	nst=0
+
+
